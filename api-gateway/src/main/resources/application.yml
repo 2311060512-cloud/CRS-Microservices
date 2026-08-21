@@ -6,6 +6,10 @@ spring:
     gateway:
       server:
         webflux:
+
+          # ==========================
+          # ROUTES
+          # ==========================
           routes:
 
             # ==========================
@@ -68,15 +72,24 @@ spring:
               filters:
                 - RewritePath=/api/public/courses, /courses
 
-      # ==========================
-      # CORS
-      # ==========================
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "http://localhost:5173"
-            allowedMethods: "*"
-            allowedHeaders: "*"
+          # ==========================
+          # CORS
+          # ==========================
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:5173"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
 
 server:
   port: 8080
