@@ -16,19 +16,65 @@ export default function SearchBox({ onSearch, placeholder }: SearchBoxProps) {
     }, [inputValue, onSearch]);
 
     return (
-        <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={placeholder ?? 'Tim kiem theo ten mon hoc...'}
-            style={{
-                width: '100%',
-                maxWidth: 400,
-                padding: '8px 12px',
-                fontSize: 14,
-                border: '1px solid #ccc',
-                borderRadius: 6,
-            }}
-        />
+        <div style={{ position: 'relative', width: '100%', maxWidth: '450px' }}>
+            <span
+                style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--text-light)',
+                    fontSize: '16px',
+                    pointerEvents: 'none',
+                }}
+            >
+                🔍
+            </span>
+            <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={placeholder ?? 'Tìm kiếm theo tên môn học...'}
+                style={{
+                    width: '100%',
+                    padding: '11px 16px 11px 40px',
+                    fontSize: '14px',
+                    backgroundColor: '#fff',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    outline: 'none',
+                    boxShadow: 'var(--shadow-sm)',
+                    transition: 'var(--transition)',
+                }}
+                onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--border-focus)';
+                    e.target.style.boxShadow = '0 0 0 3px var(--primary-light)';
+                }}
+                onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'var(--shadow-sm)';
+                }}
+            />
+            {inputValue && (
+                <button
+                    type="button"
+                    onClick={() => setInputValue('')}
+                    style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-light)',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        padding: '4px',
+                    }}
+                >
+                    ✕
+                </button>
+            )}
+        </div>
     );
 }

@@ -11,26 +11,26 @@ API cua he thong CRS duoc thiet ke theo kien truc Microservices. Client/Frontend
 
 ## 2. Auth API (auth-service: 8081)
 
-Quan ly thong tin tai khoan, xac thuc va phan quyen sinh vien.
+Quan ly thong tin tai khoan, xac thuc va phan quyen nguoi dung / sinh vien / admin.
 
 ### Dang nhap he thong
 - Method / Endpoint: `POST /api/auth/login`
 - Request Body:
   ```json
   {
-    "username": "student",
-    "password": "password123"
+    "username": "admin",
+    "password": "admin123"
   }
   ```
-- Response: Tra ve thong tin sinh vien kem JWT Access Token.
+- Response: Tra ve thong tin nguoi dung kem JWT Access Token (luu vao `localStorage.crs_token` o Frontend).
 
 ---
 
 ## 3. Course API (course-service: 8082)
 
-Cung cap danh muc hoc phan, tim kiem va phan trang du lieu.
+Cung cap danh muc hoc phan, tim kiem, phan trang du lieu va cac thao tac CRUD quan ly mon hoc.
 
-### 3.1. Lay danh sach hoc phan (Search & Pagination)
+### 3.1. Lay danh sach hoc phan (Search & Pagination - Public)
 - Method / Endpoint: `GET /api/courses`
 - Query Parameters:
   - `keyword` (optional, string): Tu khoa tim kiem theo ten mon hoc.
@@ -56,9 +56,40 @@ Cung cap danh muc hoc phan, tim kiem va phan trang du lieu.
   }
   ```
 
-### 3.2. Lay chi tiet hoc phan
+### 3.2. Lay chi tiet hoc phan (Public)
 - Method / Endpoint: `GET /api/courses/{id}`
 - Response: Thong tin chi tiet cua hoc phan tuong ung.
+
+### 3.3. Them mon hoc moi (Requires ROLE_ADMIN - JWT Bearer Token)
+- Method / Endpoint: `POST /api/courses`
+- Headers: `Authorization: Bearer <token>`
+- Request Body:
+  ```json
+  {
+    "tenMonHoc": "Kien truc Microservices",
+    "soTinChi": 3,
+    "soChoToiDa": 50
+  }
+  ```
+- Response: Đối tượng `Course` mới được tạo với HTTP 201/200.
+
+### 3.4. Cap nhat mon hoc (Requires ROLE_ADMIN - JWT Bearer Token)
+- Method / Endpoint: `PUT /api/courses/{id}`
+- Headers: `Authorization: Bearer <token>`
+- Request Body:
+  ```json
+  {
+    "tenMonHoc": "Kien truc Microservices Nang Cao",
+    "soTinChi": 4,
+    "soChoToiDa": 60
+  }
+  ```
+- Response: Đối tượng `Course` đã cập nhật.
+
+### 3.5. Xoa mon hoc (Requires ROLE_ADMIN - JWT Bearer Token)
+- Method / Endpoint: `DELETE /api/courses/{id}`
+- Headers: `Authorization: Bearer <token>`
+- Response: HTTP 204 No Content hoặc 200 OK.
 
 ---
 
@@ -76,7 +107,7 @@ Quan ly viec dang ky, xem va huy dang ky hoc phan.
 
 ```
 Frontend (:5173)
-       |
+       | (kem Authorization: Bearer <token> neu co)
        v
 API Gateway (:8080)
   /    |     \
@@ -91,13 +122,23 @@ Frontend khong goi truc tiep cac port 8081, 8082, 8083. Toan bo giao tiep deu qu
 
 ## 6. Xu ly loi API (Error Handling Blueprint)
 
-Cau truc loi chuan (`ApiErrorResponse`) tra ve khi co ngoai le:
+Format loi thong nhat duoc xu ly qua ham `extractErrorMessage`:
 
-```json
-{
-  "message": "Thong tin loi mo ta chi tiet tu Backend",
-  "status": 400
-}
-```
-
-Truong hop API Gateway / Microservice bi gian doan (mat ket noi hoan toan, khong co response), Frontend se bat ngoai le va tra thong bao loi ket noi toi nguoi dung.
+1. **Loi nghiep vu chung (Business Error)**:
+   ```json
+   {
+     "message": "Ten mon hoc da ton tai trong he thong",
+     "status": 400
+   }
+   ```
+2. **Loi Validation tung Field (Server Validation)**:
+   ```json
+   {
+     "tenMonHoc": "Ten mon hoc khong duoc de trong",
+     "soTinChi": "So tin chi phai lon hon 0"
+   }
+   ```
+3. **Loi Quyen / Xac thuc**:
+   - `401 Unauthorized`: Token khong hop le hoac chua dang nhap.
+   - `403 Forbidden`: Khong du quyen Admin (`ROLE_ADMIN`).
+4. **Mat ket noi**: Bắt ngoại lệ và hiển thị thông báo lỗi thân thiện thay vì crash giao diện.

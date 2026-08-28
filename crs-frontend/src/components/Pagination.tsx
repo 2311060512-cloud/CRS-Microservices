@@ -46,73 +46,118 @@ export default function Pagination({
         return pages;
     };
 
-    const buttonStyle = {
-        padding: '6px 12px',
-        fontSize: '14px',
-        borderRadius: '4px',
-        border: '1px solid #ccc',
-        cursor: 'pointer',
-        background: '#fff',
-    };
-
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 20 }}>
-            <button
-                disabled={currentPage === 0}
-                onClick={() => onPageChange(currentPage - 1)}
-                style={{
-                    ...buttonStyle,
-                    cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
-                    opacity: currentPage === 0 ? 0.5 : 1,
-                }}
-            >
-                « Trang trước
-            </button>
-
-            {getPageNumbers().map((p, index) => {
-                if (p === '...') {
-                    return (
-                        <span key={`dots-${index}`} style={{ padding: '0 4px', color: '#666' }}>
-                            ...
-                        </span>
-                    );
-                }
-
-                const pageNum = Number(p);
-                const isActive = pageNum === currentPage;
-
-                return (
-                    <button
-                        key={pageNum}
-                        onClick={() => onPageChange(pageNum)}
-                        style={{
-                            ...buttonStyle,
-                            fontWeight: isActive ? 'bold' : 'normal',
-                            backgroundColor: isActive ? '#2563eb' : '#fff',
-                            color: isActive ? '#fff' : '#000',
-                            borderColor: isActive ? '#2563eb' : '#ccc',
-                        }}
-                    >
-                        {pageNum + 1}
-                    </button>
-                );
-            })}
-
-            <button
-                disabled={currentPage >= totalPages - 1}
-                onClick={() => onPageChange(currentPage + 1)}
-                style={{
-                    ...buttonStyle,
-                    cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer',
-                    opacity: currentPage >= totalPages - 1 ? 0.5 : 1,
-                }}
-            >
-                Trang sau »
-            </button>
-
-            <span style={{ marginLeft: 12, fontSize: 13, color: '#666' }}>
-                Trang {currentPage + 1} / {totalPages}
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginTop: '24px',
+                padding: '12px 16px',
+                backgroundColor: 'var(--surface-card)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow-sm)',
+            }}
+        >
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                Hiển thị trang <strong style={{ color: 'var(--text-main)' }}>{currentPage + 1}</strong> / <strong>{totalPages}</strong>
             </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button
+                    disabled={currentPage === 0}
+                    onClick={() => onPageChange(currentPage - 1)}
+                    style={{
+                        padding: '6px 14px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)',
+                        backgroundColor: '#fff',
+                        color: currentPage === 0 ? 'var(--text-light)' : 'var(--text-main)',
+                        cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === 0 ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                        if (currentPage !== 0) e.currentTarget.style.backgroundColor = 'var(--surface-card-subtle)';
+                    }}
+                    onMouseLeave={(e) => {
+                        if (currentPage !== 0) e.currentTarget.style.backgroundColor = '#fff';
+                    }}
+                >
+                    ‹ Trước
+                </button>
+
+                {getPageNumbers().map((p, index) => {
+                    if (p === '...') {
+                        return (
+                            <span key={`dots-${index}`} style={{ padding: '0 6px', color: 'var(--text-light)', fontSize: '14px' }}>
+                                ...
+                            </span>
+                        );
+                    }
+
+                    const pageNum = Number(p);
+                    const isActive = pageNum === currentPage;
+
+                    return (
+                        <button
+                            key={pageNum}
+                            onClick={() => onPageChange(pageNum)}
+                            style={{
+                                width: '34px',
+                                height: '34px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '13px',
+                                fontWeight: isActive ? 700 : 500,
+                                borderRadius: 'var(--radius-md)',
+                                border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
+                                backgroundColor: isActive ? 'var(--primary)' : '#fff',
+                                color: isActive ? '#fff' : 'var(--text-main)',
+                                cursor: 'pointer',
+                                boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isActive) e.currentTarget.style.backgroundColor = 'var(--surface-card-subtle)';
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isActive) e.currentTarget.style.backgroundColor = '#fff';
+                            }}
+                        >
+                            {pageNum + 1}
+                        </button>
+                    );
+                })}
+
+                <button
+                    disabled={currentPage >= totalPages - 1}
+                    onClick={() => onPageChange(currentPage + 1)}
+                    style={{
+                        padding: '6px 14px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)',
+                        backgroundColor: '#fff',
+                        color: currentPage >= totalPages - 1 ? 'var(--text-light)' : 'var(--text-main)',
+                        cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer',
+                        opacity: currentPage >= totalPages - 1 ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                        if (currentPage < totalPages - 1) e.currentTarget.style.backgroundColor = 'var(--surface-card-subtle)';
+                    }}
+                    onMouseLeave={(e) => {
+                        if (currentPage < totalPages - 1) e.currentTarget.style.backgroundColor = '#fff';
+                    }}
+                >
+                    Sau ›
+                </button>
+            </div>
         </div>
     );
 }
