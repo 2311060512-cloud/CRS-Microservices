@@ -1,85 +1,108 @@
-# THIẾT KẾ BIÊN GIỚI SERVICE
+# THIET KE BIEN GIOI SERVICE
 
-## 1. Tổng quan
+## 1. Tong quan
 
-Dự án CRS (Course Registration System) là hệ thống đăng ký học phần được xây dựng theo kiến trúc Microservices.
+Du an CRS (Course Registration System) la he thong dang ky hoc phan duoc xay dung theo kien truc Microservices.
 
-Hệ thống gồm các thành phần:
+He thong gom cac thanh phan:
 
-- `auth-service`: quản lý đăng nhập và xác thực.
-- `course-service`: quản lý học phần.
-- `registration-service`: quản lý đăng ký học phần.
-- `api-gateway`: trung gian kết nối Frontend với các service.
-- `crs-frontend`: giao diện React + TypeScript.
+- `auth-service`: Quan ly tai khoan, dang nhap va phat hanh JWT token.
+- `course-service`: Quan ly thong tin hoc phan, tim kiem, phan trang va so luong cho.
+- `registration-service`: Quan ly nghiep vu dang ky va huy dang ky hoc phan.
+- `api-gateway`: Trung gian API Gateway, dong vai tro Reverse Proxy dinh tuyen request tu Frontend toi cac service, kiem soat CORS va xu ly token.
+- `crs-frontend`: Giao dien nguoi dung viet bang React + TypeScript (Vite).
 
-Luồng chính:
+### So do luong du lieu va kien truc:
 
-
+```
 crs-frontend :5173
-|
-v
-api-gateway :8080
-|     |     |
-v     v     v
+       |
+       v
+  api-gateway :8080
+  /     |     \
+ v      v      v
 auth  course  registration
 :8081  :8082     :8083
-2. Biên giới các Service
+```
 
-Mỗi service đảm nhận một chức năng riêng.
+---
 
-auth-service xử lý tài khoản, đăng nhập và JWT.
+## 2. Bien gioi va Trach nhiem cua cac Service
 
-course-service quản lý thông tin học phần như tên môn, số tín chỉ và số chỗ còn lại.
+Moi service trong he thong tuan theo nguyen tac phan tach trach nhiem (Separation of Concerns) va so huu co so du lieu doc lap:
 
-registration-service xử lý việc đăng ký và hủy đăng ký học phần.
+1. **auth-service (Port 8081)**:
+   - Quan ly tai khoan sinh vien/nguoi dung.
+   - Xac thuc danh tinh (Authentication) va cap phat JWT Token.
+   - Bien gioi du lieu: Chi quan ly bang nguoi dung, thong tin xac thuc.
 
-api-gateway nhận request từ Frontend, định tuyến đến đúng service và xử lý CORS, JWT.
+2. **course-service (Port 8082)**:
+   - Quan ly danh muc hoc phan: ma hoc phan, ten mon hoc, so tin chi, so cho toi da, so cho con lai.
+   - Cung cap API tim kiem theo tu khoa (`keyword`) va phan trang (`page`, `size`) dang Spring Data Pageable.
+   - Bien gioi du lieu: Chi luu tru va thao tac du lieu lien quan den hoc phan.
 
-Frontend chỉ gọi API thông qua Gateway, không gọi trực tiếp các service phía sau.
+3. **registration-service (Port 8083)**:
+   - Quan ly viec dang ky, huy dang ky hoc phan cua sinh vien.
+   - Xu ly rang buoc nghiep vu (kiem tra trang thai mon hoc, so luong sinh vien dang ky).
+   - Bien gioi du lieu: Luu lich su va trang thai dang ky cua tung sinh vien.
 
-3. API Gateway
+4. **api-gateway (Port 8080)**:
+   - Diem truy cap duy nhat (Single Entry Point) cho toan bo ung dung Client.
+   - Dieu huong (Routing) request den cac Microservice phia sau.
+   - Cau hinh CORS tap trung va xu ly loi ket noi chung.
 
-Gateway chạy tại:
+---
 
-http://localhost:8080
+## 3. Cau hinh Dinh tuyen tren API Gateway
 
-Các route chính:
+Gateway chay tai: `http://localhost:8080`
 
-/api/auth/**          -> :8081
-/api/courses/**       -> :8082
-/api/registrations/** -> :8083
+Cac quy tac dinh tuyen (Route mappings):
 
-Ví dụ:
+| Route Path | Dich chuyen tiep (Target) | Muc dich |
+| :--- | :--- | :--- |
+| `/api/auth/**` | `http://localhost:8081` | Dang nhap, xac thuc va phan quyen |
+| `/api/courses/**` | `http://localhost:8082` | Tra cuu danh sach mon hoc, tim kiem, chi tiet mon |
+| `/api/registrations/**` | `http://localhost:8083` | Dang ky & quan ly hoc phan sinh vien |
 
-GET /api/courses
+Vi du: Request `GET http://localhost:8080/api/courses?keyword=Java&page=0&size=10` se duoc Gateway chuyen tiep noi bo den `GET http://localhost:8082/courses?keyword=Java&page=0&size=10`.
 
-Gateway sẽ chuyển request đến:
+---
 
-GET http://localhost:8082/courses
-4. Frontend
+## 4. Kien truc & Thiet ke Frontend (crs-frontend)
 
-Frontend sử dụng React, TypeScript, Vite, Axios và React Router.
+Frontend duoc phat trien voi React + TypeScript + Vite, ket noi truc tiep toi API Gateway thong qua cau hinh bien moi truong:
 
-File .env:
-
+```env
 VITE_API_BASE_URL=http://localhost:8080
+```
 
-Axios được cấu hình tại:
+### Cau truc mo-dun hoa:
 
-src/api/axiosClient.ts
+- **Mo hinh tang API & Custom Hook**:
+  - `axiosClient.ts`: Cau hinh instance Axios tro ve API Gateway.
+  - `courseApi.ts`: Dinh nghia cac ham goi API mon hoc (`getCourses(keyword, page, size)`).
+  - `useCourses.ts`: Custom hook quan ly trang thai API mon hoc, tu dong kich hoat tim kiem, phan trang va quan ly 4 trang thai cot loi:
+    - **Loading**: Dang cho phan hoi tu Gateway.
+    - **Success**: Nhan du lieu thanh cong (mang co phan tu).
+    - **Empty**: Goi thanh cong nhung khong co mon hoc nao khop voi tu khoa tim kiem.
+    - **Error**: Loi mang, Gateway hoac Service down (xu ly bat loi qua `ApiErrorResponse` va mat ket noi `!err.response`).
 
-Frontend chỉ sử dụng địa chỉ của Gateway.
+- **Phan ra Component UI**:
+  - `SearchBox.tsx`: O tim kiem co tich hop ky thuat Debounce (400ms) de toi uu so luong request gui len Gateway.
+  - `Pagination.tsx`: Dieu huong phan trang (Truoc/Sau va danh sach trang), an tu dong khi chi co 1 trang.
+  - `CourseList.tsx`: Hien thi bang danh sach mon hoc, xu ly tron ven ca 4 trang thai (Loading, Success, Empty, Error) va canh bao khi mon hoc het cho (`soChoConLai === 0`).
+  - `App.tsx`: Rap noi cac component va duy tri trang thai tim kiem, luon reset ve trang 0 khi thay doi tu khoa.
 
-5. Kiểm tra hệ thống
+---
 
-Đã kiểm tra:
+## 5. Kiem tra & Van hanh He thong
 
-GET http://localhost:8080/api/courses
-
-Kết quả trả về HTTP 200 OK và lấy được danh sách học phần.
-
-CORS cũng đã được cấu hình cho Frontend:
-
-http://localhost:5173
-
-Như vậy Frontend đã kết nối thành công với course-service thông qua API Gateway.
+1. **Ket noi Gateway - Backend**:
+   - `GET http://localhost:8080/api/courses` tra ve HTTP 200 OK voi du lieu phan trang (`content`, `totalPages`, `totalElements`).
+2. **CORS**:
+   - Gateway da kich hoat CORS cho nguon goc Frontend: `http://localhost:5173`.
+3. **Frontend UI**:
+   - Tim kiem voi Debounce hoat dong muot ma.
+   - Phan trang dong bo voi backend Pageable.
+   - Xu ly an toan khi mat ket noi toi Backend/Gateway (khong gay crash trang man hinh, co nut Thu lai).
