@@ -1,5 +1,5 @@
 // path: crs-frontend/src/components/CourseList.tsx
-// purpose: bo sung nut Sua/Xoa tren moi dong, giu nguyen xu ly 4 trang thai tu Buoi 6
+// purpose: cap nhat onEdit/onDelete thanh optional, chi hien cot "Thao tac" khi duoc truyen vao
 import type { Course } from '../types/course';
 import type { LoadState } from '../api/useCourses';
 
@@ -8,8 +8,8 @@ interface CourseListProps {
     state: LoadState;
     errorMessage: string;
     onRetry: () => void;
-    onEdit: (course: Course) => void;
-    onDelete: (course: Course) => void;
+    onEdit?: (course: Course) => void;
+    onDelete?: (course: Course) => void;
 }
 
 export default function CourseList({
@@ -108,11 +108,13 @@ export default function CourseList({
                     Không tìm thấy môn học nào phù hợp
                 </h4>
                 <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '13px' }}>
-                    Thử tìm kiếm với từ khóa khác hoặc thêm môn học mới vào hệ thống.
+                    Thử tìm kiếm với từ khóa khác hoặc quay lại trang danh sách.
                 </p>
             </div>
         );
     }
+
+    const showActions = !!onEdit || !!onDelete;
 
     return (
         <div
@@ -143,9 +145,11 @@ export default function CourseList({
                             <th style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                 Chỗ còn lại / Tối đa
                             </th>
-                            <th style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
-                                Thao tác
-                            </th>
+                            {showActions && (
+                                <th style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
+                                    Thao tác
+                                </th>
+                            )}
                         </tr>
                     </thead>
                     <tbody>
@@ -230,62 +234,68 @@ export default function CourseList({
                                             )}
                                         </div>
                                     </td>
-                                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                            <button
-                                                onClick={() => onEdit(course)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    backgroundColor: '#fff',
-                                                    border: '1px solid var(--border)',
-                                                    borderRadius: 'var(--radius-sm)',
-                                                    color: '#2563eb',
-                                                    fontWeight: 600,
-                                                    fontSize: '13px',
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.backgroundColor = 'var(--primary-light)';
-                                                    e.currentTarget.style.borderColor = 'var(--primary-border)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.backgroundColor = '#fff';
-                                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                                }}
-                                            >
-                                                ✏️ Sửa
-                                            </button>
-                                            <button
-                                                onClick={() => onDelete(course)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    backgroundColor: '#fff',
-                                                    border: '1px solid var(--border)',
-                                                    borderRadius: 'var(--radius-sm)',
-                                                    color: 'var(--danger-text)',
-                                                    fontWeight: 600,
-                                                    fontSize: '13px',
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.backgroundColor = 'var(--danger-light)';
-                                                    e.currentTarget.style.borderColor = 'var(--danger-border)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.backgroundColor = '#fff';
-                                                    e.currentTarget.style.borderColor = 'var(--border)';
-                                                }}
-                                            >
-                                                🗑️ Xóa
-                                            </button>
-                                        </div>
-                                    </td>
+                                    {showActions && (
+                                        <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                                {onEdit && (
+                                                    <button
+                                                        onClick={() => onEdit(course)}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            backgroundColor: '#fff',
+                                                            border: '1px solid var(--border)',
+                                                            borderRadius: 'var(--radius-sm)',
+                                                            color: '#2563eb',
+                                                            fontWeight: 600,
+                                                            fontSize: '13px',
+                                                            cursor: 'pointer',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.backgroundColor = 'var(--primary-light)';
+                                                            e.currentTarget.style.borderColor = 'var(--primary-border)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.backgroundColor = '#fff';
+                                                            e.currentTarget.style.borderColor = 'var(--border)';
+                                                        }}
+                                                    >
+                                                        ✏️ Sửa
+                                                    </button>
+                                                )}
+                                                {onDelete && (
+                                                    <button
+                                                        onClick={() => onDelete(course)}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            backgroundColor: '#fff',
+                                                            border: '1px solid var(--border)',
+                                                            borderRadius: 'var(--radius-sm)',
+                                                            color: 'var(--danger-text)',
+                                                            fontWeight: 600,
+                                                            fontSize: '13px',
+                                                            cursor: 'pointer',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.backgroundColor = 'var(--danger-light)';
+                                                            e.currentTarget.style.borderColor = 'var(--danger-border)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.backgroundColor = '#fff';
+                                                            e.currentTarget.style.borderColor = 'var(--border)';
+                                                        }}
+                                                    >
+                                                        🗑️ Xóa
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         })}

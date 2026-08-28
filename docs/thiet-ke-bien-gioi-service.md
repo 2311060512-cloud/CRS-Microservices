@@ -10,12 +10,12 @@ He thong gom cac thanh phan:
 - `course-service`: Quan ly thong tin hoc phan, tim kiem, phan trang, them/sua/xoa va so luong cho.
 - `registration-service`: Quan ly nghiep vu dang ky va huy dang ky hoc phan.
 - `api-gateway`: Trung gian API Gateway, dong vai tro Reverse Proxy dinh tuyen request tu Frontend toi cac service, kiem soat CORS va xu ly/chuyen tiep JWT token.
-- `crs-frontend`: Giao dien nguoi dung viet bang React + TypeScript (Vite).
+- `crs-frontend`: Giao dien nguoi dung viet bang React + TypeScript (Vite) + React Router v7.
 
 ### So do luong du lieu va kien truc:
 
 ```
-crs-frontend :5173
+crs-frontend :5173 (React Router: /login, /courses, /admin/courses, /register-course)
        | (Authorization: Bearer <token>)
        v
   api-gateway :8080
@@ -33,8 +33,8 @@ Moi service trong he thong tuan theo nguyen tac phan tach trach nhiem (Separatio
 
 1. **auth-service (Port 8081)**:
    - Quan ly tai khoan sinh vien/admin/nguoi dung.
-   - Xac thuc danh tinh (Authentication) va cap phat JWT Token voi Claims & Roles.
-   - Bien gioi du lieu: Chi quan ly bang nguoi dung, thong tin xac thuc va phan quyen.
+   - Xac thuc danh tinh (Authentication) va cap phat JWT Token voi Claims & Roles (`ADMIN`, `STUDENT`).
+   - Bien gioi du lieu: Chi quan ly bang nguoi dung (`app_user`), thong tin xac thuc va phan quyen.
 
 2. **course-service (Port 8082)**:
    - Quan ly danh muc hoc phan: ma hoc phan, ten mon hoc, so tin chi, so cho toi da, so cho con lai.
@@ -70,35 +70,37 @@ Cac quy tac dinh tuyen (Route mappings):
 
 ---
 
-## 4. Kien truc & Thiet ke Frontend (crs-frontend)
+## 4. Kien truc & Thiet ke Frontend (crs-frontend) - Buoi 8
 
-Frontend duoc phat trien voi React + TypeScript + Vite, ket noi truc tiep toi API Gateway thong qua cau hinh bien moi truong:
+Frontend duoc tai cau truc toan dien theo Route, AuthContext va Interceptors:
 
-```env
-VITE_API_BASE_URL=http://localhost:8080
-```
+### 4.1. Cau truc Dinh tuyen (Routing)
+- `/login`: Trang dang nhap (`LoginPage.tsx`) goi `POST /api/auth/login`.
+- `/courses`: Trang xem danh sach mon hoc cong khai (`CoursesPage.tsx`) cho ca Sinh vien va Khach.
+- `/admin/courses`: Trang quan tri CRUD mon hoc (`AdminCoursesPage.tsx`), duoc bao ve boi `ProtectedRoute` (yeu cau role `ADMIN`).
+- `/register-course`: Trang dang ky hoc phan (`RegisterCoursePage.tsx`), duoc bao ve boi `ProtectedRoute` (yeu cau role `STUDENT`).
 
-### Cau truc mo-dun hoa & Trien khai Buoi 7:
+### 4.2. AuthContext & Luu tru phien (Session Persistence)
+- `AuthContext.tsx`: Quan ly state dang nhap toan cuc (`user`, `isAuthenticated`, `login`, `logout`).
+- Key luu tru tren `localStorage`: `crs_token` (luu JWT) va `crs_user` (luu username + role).
+- `useEffect` tu dong doc lai `localStorage` khi nguoi dung F5 trang, giu nguyen phien dang nhap.
 
-- **Mo hinh tang API & Custom Hook**:
-  - `axiosClient.ts`: Cau hinh instance Axios tro ve API Gateway, kem Request Interceptor tu dong chen `Authorization: Bearer ${localStorage.getItem('crs_token')}`.
-  - `courseApi.ts`: Dinh nghia cac ham goi API mon hoc: `getCourses`, `createCourse`, `updateCourse`, `deleteCourse`.
-  - `useCourses.ts`: Custom hook quan ly trang thai API mon hoc, tu dong kich hoat tim kiem, phan trang va quan ly 4 trang thai cot loi (Loading, Success, Empty, Error) kem ham `refetch()`.
+### 4.3. Axios Interceptors 2 chieu
+- **Request Interceptor**: Tu dong doc `crs_token` tu `localStorage` va them `Authorization: Bearer <token>` vao moi request.
+- **Response Interceptor**: Bat ma loi `401 Unauthorized` (token het han / khong hop le) $\rightarrow$ tu dong xoa token va chuyen huong ve `/login`.
 
-- **Phan ra Component UI & Controlled Components**:
-  - `CourseForm.tsx`: Form quan ly dung chung che do Them/Sua (Controlled Component qua React state), validate du lieu phia Client truoc khi submit, do san du lieu khi o che do Sua va hien thi loi server.
-  - `SearchBox.tsx`: O tim kiem co tich hop ky thuat Debounce (400ms) de toi uu so luong request gui len Gateway.
-  - `Pagination.tsx`: Dieu huong phan trang (Truoc/Sau va danh sach trang), an tu dong khi chi co 1 trang.
-  - `CourseList.tsx`: Hien thi bang danh sach mon hoc kem nut Sua/Xoa tren tung dong, xu ly tron ven ca 4 trang thai va canh bao khi mon hoc het cho (`soChoConLai === 0`).
-  - `App.tsx`: Rap noi toan bo luong CRUD, quan ly state `editingCourse`, bat va bóc tách ma loi thong nhat (`extractErrorMessage`), tu dong refetch du lieu va hien thi Toast Notification phan hoi.
+### 4.4. Role-Based UI & Navigation
+- `Navbar.tsx`: Hien thi menu tuy bien theo vai tro (`ADMIN` thi co menu Quan tri, `STUDENT` co menu Dang ky, hien thi badge ten user va nut Dang xuat).
+- `CourseList.tsx`: Cac prop `onEdit` va `onDelete` tro thanh optional. Khi o trang cong khai `/courses`, cot "Thao tac" se tu dong an di.
 
 ---
 
-## 5. Kiem tra & Van hanh He thong (CRUD Kich ban day du)
+## 5. Kiem tra & Kich ban Van hanh Buoi 8
 
-1. **Validate Client**: Form chan submit va hien loi do ngay lap tuc neu de trong ten mon hoac tin chi/so cho $\le 0$.
-2. **Them mon moi**: Goi `POST /api/courses` qua Gateway kem Bearer Token, refetch danh sach tu dong.
-3. **Trung ten mon hoc**: Server tra ve loi nghiep vu `{"message": "..."}`, giao dien bat va hien thi dung duoi form.
-4. **Sua mon hoc**: Nhan nut "Sua" $\rightarrow$ du lieu duoc nap vao form $\rightarrow$ cap nhat `PUT /api/courses/{id}` $\rightarrow$ refetch.
-5. **Xoa mon hoc**: Hien thi Confirm dialog $\rightarrow$ goi `DELETE /api/courses/{id}` $\rightarrow$ dong bi xoa tuc thi.
-6. **Xac thuc 401/403**: Xu ly an toan khi token het han hoac khong du quyen ma khong lam crash trang.
+1. **Chua dang nhap**: Truy cap `/admin/courses` $\rightarrow$ ProtectedRoute tu dong chuyen huong ve `/login`.
+2. **Dang nhap sai**: Nhap sai username/password $\rightarrow$ Hien thi loi: *"Sai username hoac password"*.
+3. **Dang nhap Student** (`student1` / `student123`): Chuyen den `/courses`, Navbar hien menu *"Dang ky hoc phan"*. Neu co tinh vao `/admin/courses` $\rightarrow$ tu redirect ve `/courses`.
+4. **Dang nhap Admin** (`admin` / `admin123`): Navbar hien menu *"Quan tri mon hoc"*, truy cap `/admin/courses` thuc hien day du quyen CRUD.
+5. **F5 Trang**: Trang thai dang nhap van duoc giu nguyen nho AuthContext session restore.
+6. **Token bi loi / gia mao**: Khi API tra ve `401`, Response Interceptor tu dong xoa `localStorage` va day ve `/login`.
+7. **Trang cong khai `/courses`**: Khong hien cot Thao tac (Sua / Xoa).

@@ -1,226 +1,44 @@
 // path: crs-frontend/src/App.tsx
-// purpose: rap CourseForm + CourseList + Pagination + SearchBox, xu ly Them/Sua/Xoa
-// va dong bo lai danh sach (refetch) sau moi thao tac thanh cong
-import { useState, useCallback } from 'react';
-import axios from 'axios';
-import { useCourses } from './api/useCourses';
-import { createCourse, updateCourse, deleteCourse } from './api/courseApi';
-import SearchBox from './components/SearchBox';
-import CourseList from './components/CourseList';
-import Pagination from './components/Pagination';
-import CourseForm from './components/CourseForm';
-import type { Course, CourseFormValues } from './types/course';
-import type { ApiErrorResponse } from './types/apiError';
+// purpose: khai bao toan bo Router cua ung dung, thay the noi dung App.tsx cu cua Buoi 6-7
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import CoursesPage from './pages/CoursesPage';
+import AdminCoursesPage from './pages/AdminCoursesPage';
+import RegisterCoursePage from './pages/RegisterCoursePage';
+import Navbar from './components/Navbar';
 
 function App() {
-    const [keyword, setKeyword] = useState('');
-    const [page, setPage] = useState(0);
-    const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-    const [submitting, setSubmitting] = useState(false);
-    const [formError, setFormError] = useState<string | null>(null);
-    const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-    const { courses, totalPages, state, errorMessage, refetch } = useCourses(keyword, page);
-
-    const showToast = (type: 'success' | 'error', text: string) => {
-        setToastMessage({ type, text });
-        setTimeout(() => setToastMessage(null), 3500);
-    };
-
-    // Dung useCallback de SearchBox khong bi re-trigger timer useEffect gay reset ve trang 0
-    const handleSearch = useCallback((newKeyword: string) => {
-        setKeyword((prevKeyword) => {
-            if (prevKeyword !== newKeyword) {
-                setPage(0);
-            }
-            return newKeyword;
-        });
-    }, []);
-
-    const extractErrorMessage = (err: unknown): string => {
-        if (axios.isAxiosError<ApiErrorResponse>(err)) {
-            const data = err.response?.data;
-            if (data?.message) return data.message;
-            // Truong hop loi validation server tra ve dang { tenMonHoc: "...", soTinChi: "..." }
-            if (data) {
-                const firstFieldError = Object.values(data).find((v) => typeof v === 'string');
-                if (firstFieldError) return firstFieldError;
-            }
-            if (err.response?.status === 401) {
-                return 'Chưa đăng nhập hoặc phiên làm việc đã hết hạn (401). Vui lòng cấu hình token trong localStorage.';
-            }
-            if (err.response?.status === 403) {
-                return 'Bạn không có quyền thực hiện thao tác này (403 - Cần quyền ROLE_ADMIN).';
-            }
-        }
-        return 'Đã xảy ra lỗi, vui lòng thử lại.';
-    };
-
-    const handleFormSubmit = async (values: CourseFormValues) => {
-        setSubmitting(true);
-        setFormError(null);
-        try {
-            if (editingCourse) {
-                await updateCourse(editingCourse.id, values);
-                showToast('success', `Cập nhật môn học "${values.tenMonHoc}" thành công!`);
-            } else {
-                await createCourse(values);
-                showToast('success', `Thêm môn học "${values.tenMonHoc}" thành công!`);
-            }
-            setEditingCourse(null);
-            refetch(); // dong bo lai danh sach ngay sau khi luu thanh cong
-        } catch (err) {
-            setFormError(extractErrorMessage(err));
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const handleDelete = async (course: Course) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa môn học "${course.tenMonHoc}"?`)) return;
-        try {
-            await deleteCourse(course.id);
-            showToast('success', `Đã xóa môn học "${course.tenMonHoc}" thành công!`);
-            refetch();
-        } catch (err) {
-            showToast('error', extractErrorMessage(err));
-        }
-    };
-
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)', padding: '36px 20px' }}>
-            {/* Toast Notification */}
-            {toastMessage && (
-                <div
-                    className="animate-fade-in"
-                    style={{
-                        position: 'fixed',
-                        top: '24px',
-                        right: '24px',
-                        zIndex: 9999,
-                        padding: '14px 20px',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: toastMessage.type === 'success' ? '#065f46' : '#991b1b',
-                        color: '#ffffff',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        boxShadow: 'var(--shadow-xl)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                    }}
-                >
-                    <span>{toastMessage.type === 'success' ? '✅' : '❌'}</span>
-                    <span>{toastMessage.text}</span>
-                </div>
-            )}
-
-            <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-                {/* Header Section */}
-                <header
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '16px',
-                        marginBottom: '32px',
-                        paddingBottom: '20px',
-                        borderBottom: '1px solid var(--border)',
-                    }}
-                >
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                            <span
-                                style={{
-                                    fontSize: '11px',
-                                    fontWeight: 700,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1px',
-                                    color: 'var(--primary)',
-                                    backgroundColor: 'var(--primary-light)',
-                                    padding: '4px 10px',
-                                    borderRadius: 'var(--radius-full)',
-                                }}
-                            >
-                                Admin Portal
-                            </span>
-                            <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>• Buổi 7 - CRUD & State Sync</span>
-                        </div>
-                        <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>
-                            Quản lý Môn học
-                        </h1>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
-                            Thêm mới, điều chỉnh thông tin và quản lý sĩ số các môn học trong hệ thống
-                        </p>
-                    </div>
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            backgroundColor: 'var(--surface-card)',
-                            padding: '8px 14px',
-                            borderRadius: 'var(--radius-full)',
-                            border: '1px solid var(--border)',
-                            fontSize: '13px',
-                            color: 'var(--text-muted)',
-                        }}
-                    >
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
-                        <span>Gateway: Connected</span>
-                    </div>
-                </header>
-
-                {/* Form Section */}
-                <CourseForm
-                    editingCourse={editingCourse}
-                    onSubmit={handleFormSubmit}
-                    onCancel={() => setEditingCourse(null)}
-                    submitting={submitting}
-                    serverError={formError}
-                />
-
-                {/* Search & Filter Bar */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '16px',
-                        marginBottom: '20px',
-                    }}
-                >
-                    <SearchBox onSearch={handleSearch} />
-
-                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                        Tổng số môn: <strong style={{ color: 'var(--text-main)' }}>{courses.length}</strong> trên trang hiện tại
-                    </div>
-                </div>
-
-                {/* Table Data */}
-                <CourseList
-                    courses={courses}
-                    state={state}
-                    errorMessage={errorMessage}
-                    onRetry={refetch}
-                    onEdit={(course) => {
-                        setEditingCourse(course);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    onDelete={handleDelete}
-                />
-
-                {/* Pagination */}
-                <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
-                />
-            </div>
-        </div>
+        <BrowserRouter>
+            <AuthProvider>
+                <Navbar />
+                <Routes>
+                    <Route path="/" element={<Navigate to="/courses" replace />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/courses" element={<CoursesPage />} />
+                    <Route
+                        path="/admin/courses"
+                        element={
+                            <ProtectedRoute requiredRole="ADMIN">
+                                <AdminCoursesPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/register-course"
+                        element={
+                            <ProtectedRoute requiredRole="STUDENT">
+                                <RegisterCoursePage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    {/* Fallback cho cac route khong hop le */}
+                    <Route path="*" element={<Navigate to="/courses" replace />} />
+                </Routes>
+            </AuthProvider>
+        </BrowserRouter>
     );
 }
 
