@@ -42,7 +42,7 @@ Moi service trong he thong tuan theo nguyen tac phan tach trach nhiem (Separatio
    - Quan ly danh muc hoc phan: ma hoc phan, ten mon hoc, so tin chi, so cho toi da, so cho con lai.
    - Cung cap API cong khai: tra cuu danh sach (`GET /api/courses`), tim kiem (`keyword`), phan trang (`page`, `size`) va chi tiet mon (`GET /api/courses/{id}`).
    - Cung cap API quan tri CRUD (`POST`, `PUT`, `DELETE /api/courses/**`) kem xac thuc `ROLE_ADMIN`.
-   - Cung cap API noi bo (`PUT /internal/courses/{id}/reserve-seat` va `release-seat`) de registration-service giu/hoan cho.
+   - Cung cap API noi bo (`PUT/PATCH /internal/courses/{id}/reserve-seat` va `release-seat`) de registration-service giu/hoan cho.
    - Bien gioi du lieu: Chi luu tru va thao tac tren bang `course`.
 
 3. **registration-service (Port 8083)**:
@@ -54,7 +54,7 @@ Moi service trong he thong tuan theo nguyen tac phan tach trach nhiem (Separatio
 4. **api-gateway (Port 8080)**:
    - Diem truy cap duy nhat (Single Entry Point) cho toan bo ung dung Client.
    - Dieu huong (Routing) request den cac Microservice phia sau.
-   - Cau hinh CORS tap trung va xac thuc/chuyen tiep Header `Authorization: Bearer <token>`.
+   - Cau hinh CORS tap trung va xac thuc/chuyen tiep Header `Authorization: Bearer <token>`, bao ve route doi tac bang `X-API-KEY`.
 
 ---
 
@@ -72,50 +72,54 @@ Cac quy tac dinh tuyen (Route mappings):
 | `POST /api/registrations` | `http://localhost:8083` | `ROLE_STUDENT` | Dang ky hoc phan moi |
 | `GET /api/registrations/my` | `http://localhost:8083` | `ROLE_STUDENT` | Xem danh sach cac mon hoc SV da dang ky |
 | `DELETE /api/registrations/{id}` | `http://localhost:8083` | `ROLE_STUDENT` | Huy dang ky hoc phan |
+| `GET /api/public/courses` | `http://localhost:8082` | Partner (`X-API-KEY`) | Cung cap du lieu cho he thong doi tac |
 
 ---
 
-## 4. Kien truc & Thiet ke Frontend (crs-frontend) - Buoi 9
+## 4. Kien truc Frontend & Xu ly giao dien (crs-frontend)
 
-Frontend duoc hoan thien day du voi he thong Toast thong bao, API Composition va quan ly dang ky xuyen suot:
-
-### 4.1. Cau truc Dinh tuyen (Routing)
-- `/login`: Trang dang nhap (`LoginPage.tsx`) goi `POST /api/auth/login`.
-- `/courses`: Trang xem danh sach mon hoc cong khai (`CoursesPage.tsx`) cho tat ca nguoi dung.
-- `/admin/courses`: Trang quan tri CRUD mon hoc (`AdminCoursesPage.tsx`), duoc bao ve boi `ProtectedRoute` (yeu cau role `ADMIN`).
-- `/register-course`: Trang dang ky hoc phan (`RegisterCoursePage.tsx`), duoc bao ve boi `ProtectedRoute` (yeu cau role `STUDENT`).
-- `/my-registrations`: Trang xem va huy cac mon da dang ky (`MyRegistrationsPage.tsx`), duoc bao ve boi `ProtectedRoute` (yeu cau role `STUDENT`).
-
-### 4.2. AuthContext & Quan ly User Identity
-- `AuthContext.tsx`: Quan ly state dang nhap toan cuc (`user` gom `id`, `username`, `role`).
-- Key luu tru tren `localStorage`: `crs_token` (luu JWT) va `crs_user` (JSON chua `id`, `username`, `role`).
-- Khoi tao state dong bo ngay lap tuc tu `localStorage` giup tranh giat lag hoac bi redirect sai khi F5 trang.
-
-### 4.3. He thong Toast thong bao dung chung
-- `Toast.tsx`: Component thong bao noi dep mat (success/error), tu dong bien mat sau 3.5s kem nut tat nhanh.
-- `useToast.ts`: Hook tuy bien giup goi Toast don gian tu bat ky page nao.
-
-### 4.4. Kieu mau API Composition o Frontend (MyRegistrationsPage)
-- Do `Registration` o backend chi luu `courseId` dang so, Frontend tu ghep thong tin ten mon hoc bang cach goi song song `GET /api/courses/{id}` thong qua `Promise.all`.
-- Xu ly fallback an toan: Neu mon hoc da bi Admin xoa, he thong van hien thi dong thong tin voi ten mac dinh ma khong gay loi vo trang.
-
-### 4.5. Xu ly loi xuyen Service thong nhat
-- Khi xay ra loi (nhu "Mon hoc da het cho" tu course-service hoac "Sinh vien da dang ky mon hoc nay roi" tu registration-service), Frontend chi can trich xuat `err.response.data.message` de hien thi thong bao chinh xac cho nguoi dung.
-
-### 4.6. Tinh toan chinh xac % cho con lai
-- Tinh toan ty le cho con lai: `Math.round((soChoConLai / soChoToiDa) * 100)`.
-- Hien thi badge trang thai truc quan: `Hết chỗ` (do), `Còn <= 20%` (cam canh bao), `Còn > 20%` (xanh la).
+1. **Cau truc Routing**:
+   - `/login`: Dang nhap he thong.
+   - `/courses`: Tra cuu danh sach mon hoc cong khai.
+   - `/admin/courses`: Quan tri CRUD mon hoc (ProtectedRoute `ADMIN`).
+   - `/register-course`: Cong dang ky hoc phan (ProtectedRoute `STUDENT`).
+   - `/my-registrations`: Xem & huy mon hoc da dang ky (ProtectedRoute `STUDENT`).
+2. **Kieu mau API Composition**: Trang `MyRegistrationsPage` tu dong goi song song `GET /api/courses/{id}` de ghep thong tin ten mon hoc vao tung dong dang ky.
+3. **Thong bao Toast & Error Handling**: Toast tu dong hien thong bao thanh cong/that bai, tu dong parse thong diep loi nghiep vu tra ve tu backend xuyen service ma khong lam crash giao dien.
+4. **Tinh toan chinh xac % cho con lai**: $\text{remainingPercent} = \frac{\text{soChoConLai}}{\text{soChoToiDa}} \times 100\%$, co canh bao mau sac tuong ung.
 
 ---
 
-## 5. Kiem tra & Kich ban Van hanh Buoi 9
+## 5. Kich ban Kiem thu & Van hanh Tong hop (Buoi 10)
 
-| STT | Thao tac | Ky vong |
-| :--- | :--- | :--- |
-| 1 | Vao `/register-course`, bam **"Dang ky"** mot mon con cho | Toast xanh *"Dang ky thanh cong..."*, so cho con lai tren bang giam 1 ngay lap tuc |
-| 2 | Bam **"Dang ky"** lai dung mon vua dang ky | Toast do bao loi: *"Sinh vien da dang ky mon hoc nay roi"* (Loi tu registration-service) |
-| 3 | Dang ky mon hoc da het cho (hoac tao mon 1 cho roi dang ky truoc) | Nut hien san *"Het cho"* va bi disable; neu goi API thi Toast do hien: *"Mon hoc da het cho"* (Loi tu course-service) |
-| 4 | Vao `/my-registrations` | Thay danh sach cac mon hoc da dang ky, ten mon duoc ghep chinh xac |
-| 5 | Bam **"Huy dang ky"** mot mon | Hop thoai xac nhan xuat hien, Toast xanh thong bao thanh cong, dong bien mat khoi bang |
-| 6 | Quay lai `/register-course` | Mon vua huy da duoc tang lai 1 cho, nut Dang ky san sang hoat dong lai |
-| 7 | Dang nhap bang `admin`, go tay vao `/register-course` hoac `/my-registrations` | Tu dong redirect ve `/courses` (theo `ProtectedRoute requiredRole="STUDENT"`) |
+### 5.1. Kich ban Dau - Cuoi (End-to-End)
+1. Dang nhap `student1/student123` $\rightarrow$ Tra ve token + userId.
+2. Vao `/register-course` dang ky 1 mon con cho $\rightarrow$ Toast xanh, so cho tren bang giam 1.
+3. Dang ky lai dung mon do $\rightarrow$ Toast do: *"Sinh vien da dang ky mon hoc nay roi"*.
+4. Vao `/my-registrations` $\rightarrow$ Hien thi dung mon vua dang ky voi ten mon da duoc ghep.
+5. Bam "Huy dang ky" $\rightarrow$ Môn biến mất, so cho ben `/register-course` tang lai 1.
+6. Dang xuat $\rightarrow$ Xoa phien, truy cap route bao ve tu dong bi redirect ve `/login`.
+
+### 5.2. Kich ban Kiem thu Loi (Fault Injection: Tat `course-service`)
+- **Hanh vi**: Khi `course-service` bi dung, `registration-service` goi qua RestTemplate gap loi `ResourceAccessException` $\rightarrow$ tra ve loi JSON qua Gateway $\rightarrow$ Frontend bat loi va hien Toast do thong bao ro rang, he thong khong bi treo hay crash.
+- **Khai niem kien truc**: Minh chung cho *Single point of failure phan tan* va tam quan trong cua viec cau hinh *Timeout* / *Circuit Breaker*.
+
+### 5.3. Ra soat Bao mat Tong hop (7 Kich ban)
+| STT | Kich ban | Endpoint | Header | Status |
+| :---: | :--- | :--- | :--- | :---: |
+| 1 | Khong token | `POST /api/registrations` | *(Khong)* | **401** |
+| 2 | Token Student goi API Admin | `POST /api/courses` | `Bearer <Student_Token>` | **403** |
+| 3 | Token Admin goi API Admin | `POST /api/courses` | `Bearer <Admin_Token>` | **201** |
+| 4 | Token gia mao / chu ky sai | `GET /api/registrations/my` | `Bearer <Fake_Token>` | **401** |
+| 5 | Doi tac thieu API Key | `GET /api/public/courses` | *(Khong)* | **403** |
+| 6 | Doi tac co API Key dung | `GET /api/public/courses` | `X-API-KEY: crs-partner-key-2026` | **200** |
+| 7 | Goi thang noi bo | `PUT/PATCH :8082/internal/courses/1/reserve-seat` | *(Khong)* | **200 / 204** |
+
+---
+
+## 6. Huong dan Tu hoc Docker Compose
+
+File cau hinh mau da duoc tao tai [docker-compose.yml](file:///d:/nam4/huongdv/bai/crs-microservices/docker-compose.yml):
+- Quan ly 5 service (`auth-service`, `course-service`, `registration-service`, `api-gateway`, `crs-frontend`) cung 3 database MySQL rieng biet.
+- Cac container goi nhau qua **ten service** trong mang noi bo Docker (vi du `http://course-service:8082`) thay vi `localhost`.
+- Lenh khoi dong toan bo he thong bang Docker: `docker-compose up --build`.
