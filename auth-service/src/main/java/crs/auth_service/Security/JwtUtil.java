@@ -19,6 +19,7 @@ public class JwtUtil {
     private long expirationMs;
 
     public String generateToken(
+            Long userId,
             String username,
             String role
     ) {
@@ -35,6 +36,7 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .subject(username)
+                .claim("userId", userId)
                 .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiry)

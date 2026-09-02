@@ -10,6 +10,8 @@ interface CourseListProps {
     onRetry: () => void;
     onEdit?: (course: Course) => void;
     onDelete?: (course: Course) => void;
+    onRegister?: (course: Course) => void;
+    registeringId?: number | null;
 }
 
 export default function CourseList({
@@ -19,6 +21,8 @@ export default function CourseList({
     onRetry,
     onEdit,
     onDelete,
+    onRegister,
+    registeringId,
 }: CourseListProps) {
     if (state === 'loading') {
         return (
@@ -114,7 +118,7 @@ export default function CourseList({
         );
     }
 
-    const showActions = !!onEdit || !!onDelete;
+    const showActions = !!onEdit || !!onDelete || !!onRegister;
 
     return (
         <div
@@ -155,7 +159,11 @@ export default function CourseList({
                     <tbody>
                         {courses.map((course) => {
                             const isFull = course.soChoConLai === 0;
-                            const percentage = course.soChoToiDa > 0 ? Math.round(((course.soChoToiDa - course.soChoConLai) / course.soChoToiDa) * 100) : 0;
+                            // Ty le % cho con lai = (so cho con lai / so cho toi da) * 100
+                            const remainingPercent = course.soChoToiDa > 0
+                                ? Math.max(0, Math.min(100, Math.round((course.soChoConLai / course.soChoToiDa) * 100)))
+                                : 0;
+                            const isLow = !isFull && remainingPercent <= 20;
 
                             return (
                                 <tr
@@ -225,11 +233,11 @@ export default function CourseList({
                                                         fontWeight: 600,
                                                         padding: '2px 8px',
                                                         borderRadius: 'var(--radius-full)',
-                                                        backgroundColor: 'var(--success-light)',
-                                                        color: 'var(--success-text)',
+                                                        backgroundColor: isLow ? 'var(--warning-light)' : 'var(--success-light)',
+                                                        color: isLow ? 'var(--warning-text)' : 'var(--success-text)',
                                                     }}
                                                 >
-                                                    Còn {percentage}%
+                                                    Còn {remainingPercent}%
                                                 </span>
                                             )}
                                         </div>
@@ -291,6 +299,44 @@ export default function CourseList({
                                                         }}
                                                     >
                                                         🗑️ Xóa
+                                                    </button>
+                                                )}
+                                                {onRegister && (
+                                                    <button
+                                                        onClick={() => onRegister(course)}
+                                                        disabled={registeringId === course.id}
+                                                        title={course.soChoConLai === 0 ? 'Môn học đã hết chỗ (Bấm để thử gửi yêu cầu)' : undefined}
+                                                        style={{
+                                                            padding: '6px 14px',
+                                                            backgroundColor: course.soChoConLai === 0 ? 'var(--surface-card-subtle)' : 'var(--primary)',
+                                                            border: course.soChoConLai === 0 ? '1px solid var(--danger-border)' : 'none',
+                                                            borderRadius: 'var(--radius-sm)',
+                                                            color: course.soChoConLai === 0 ? 'var(--danger-text)' : '#fff',
+                                                            fontWeight: 600,
+                                                            fontSize: '13px',
+                                                            cursor: registeringId === course.id ? 'not-allowed' : 'pointer',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            opacity: registeringId === course.id ? 0.7 : 1,
+                                                            transition: 'var(--transition)',
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (registeringId !== course.id) {
+                                                                e.currentTarget.style.backgroundColor = course.soChoConLai === 0 ? 'var(--danger-light)' : 'var(--primary-hover)';
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            if (registeringId !== course.id) {
+                                                                e.currentTarget.style.backgroundColor = course.soChoConLai === 0 ? 'var(--surface-card-subtle)' : 'var(--primary)';
+                                                            }
+                                                        }}
+                                                    >
+                                                        {registeringId === course.id
+                                                            ? '⏳ Đang đăng ký...'
+                                                            : course.soChoConLai === 0
+                                                            ? '🚫 Hết chỗ'
+                                                            : '✍️ Đăng ký'}
                                                     </button>
                                                 )}
                                             </div>

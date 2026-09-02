@@ -104,10 +104,13 @@ public class CourseController {
 
     // ==================================================
     // INTERNAL - RESERVE SEAT
-    // PATCH /internal/courses/{id}/reserve-seat
+    // PATCH / PUT /internal/courses/{id}/reserve-seat
     // ==================================================
 
-    @PatchMapping("/internal/courses/{id}/reserve-seat")
+    @RequestMapping(
+            value = "/internal/courses/{id}/reserve-seat",
+            method = {RequestMethod.PATCH, RequestMethod.PUT}
+    )
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reserveSeat(
             @PathVariable Long id
@@ -118,10 +121,13 @@ public class CourseController {
 
     // ==================================================
     // INTERNAL - RELEASE SEAT
-    // PATCH /internal/courses/{id}/release-seat
+    // PATCH / PUT /internal/courses/{id}/release-seat
     // ==================================================
 
-    @PatchMapping("/internal/courses/{id}/release-seat")
+    @RequestMapping(
+            value = "/internal/courses/{id}/release-seat",
+            method = {RequestMethod.PATCH, RequestMethod.PUT}
+    )
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void releaseSeat(
             @PathVariable Long id

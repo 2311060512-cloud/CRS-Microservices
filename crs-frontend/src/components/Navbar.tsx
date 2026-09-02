@@ -96,9 +96,14 @@ export default function Navbar() {
                         )}
 
                         {isAuthenticated && user?.role === 'STUDENT' && (
-                            <Link to="/register-course" style={linkStyle('/register-course')}>
-                                ✍️ Đăng ký học phần
-                            </Link>
+                            <>
+                                <Link to="/register-course" style={linkStyle('/register-course')}>
+                                    ✍️ Đăng ký học phần
+                                </Link>
+                                <Link to="/my-registrations" style={linkStyle('/my-registrations')}>
+                                    📋 Môn học đã đăng ký
+                                </Link>
+                            </>
                         )}
                     </nav>
                 </div>

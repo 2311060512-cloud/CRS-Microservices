@@ -1,14 +1,12 @@
-package crs.course_service.security;
+package crs.registrationservice.Security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -37,11 +35,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-
             String token = authHeader.substring(7);
 
             try {
-
                 SecretKey key = Keys.hmacShaKeyFor(
                         secret.getBytes(StandardCharsets.UTF_8)
                 );
@@ -57,23 +53,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 Object rawUserId = claims.get("userId");
                 Long userId = rawUserId instanceof Number ? ((Number) rawUserId).longValue() : null;
 
-                var authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                userId,
-                                List.of(
-                                        new SimpleGrantedAuthority(
-                                                "ROLE_" + role
-                                        )
-                                )
-                        );
+                var authToken = new UsernamePasswordAuthenticationToken(
+                        username,
+                        userId,
+                        List.of(
+                                new SimpleGrantedAuthority("ROLE_" + role)
+                        )
+                );
 
                 SecurityContextHolder
                         .getContext()
                         .setAuthentication(authToken);
 
             } catch (Exception e) {
-                System.err.println("[course-service JwtAuthFilter] Error parsing JWT: " + e.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }

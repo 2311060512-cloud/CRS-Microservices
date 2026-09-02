@@ -8,6 +8,7 @@ import crs.registrationservice.Entity.Registration;
 import crs.registrationservice.Repository.RegistrationRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -102,5 +103,9 @@ public class RegistrationService {
         registrationRepository.save(
                 registration
         );
+    }
+
+    public List<Registration> getMyRegistrations(Long studentId) {
+        return registrationRepository.findByStudentId(studentId);
     }
 }

@@ -1,10 +1,11 @@
 // path: crs-frontend/src/context/AuthContext.tsx
 // purpose: quan ly trang thai dang nhap toan cuc, ghi/doc token dung key 'crs_token'
 // da thong nhat tu Buoi 7 - axiosClient KHONG can sua lai
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { LoginResponse } from '../types/auth';
 
 export interface AuthUser {
+    id: number;
     username: string;
     role: 'ADMIN' | 'STUDENT';
 }
@@ -14,6 +15,7 @@ interface AuthContextValue {
     login: (data: LoginResponse) => void;
     logout: () => void;
     isAuthenticated: boolean;
+    loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -22,25 +24,25 @@ const TOKEN_KEY = 'crs_token';
 const USER_KEY = 'crs_user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(null);
-
-    // Khoi phuc phien dang nhap khi F5 trang (doc lai tu localStorage)
-    useEffect(() => {
+    // Khoi tao state dong bo ngay lap tuc tu localStorage, khong cho useEffect chay sau
+    const [user, setUser] = useState<AuthUser | null>(() => {
         const savedUser = localStorage.getItem(USER_KEY);
         const savedToken = localStorage.getItem(TOKEN_KEY);
         if (savedUser && savedToken) {
             try {
-                setUser(JSON.parse(savedUser));
+                return JSON.parse(savedUser) as AuthUser;
             } catch {
                 localStorage.removeItem(USER_KEY);
                 localStorage.removeItem(TOKEN_KEY);
+                return null;
             }
         }
-    }, []);
+        return null;
+    });
 
     const login = (data: LoginResponse) => {
         localStorage.setItem(TOKEN_KEY, data.token);
-        const authUser: AuthUser = { username: data.username, role: data.role };
+        const authUser: AuthUser = { id: data.userId, username: data.username, role: data.role };
         localStorage.setItem(USER_KEY, JSON.stringify(authUser));
         setUser(authUser);
     };
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 logout,
                 isAuthenticated: !!user,
+                loading: false,
             }}
         >
             {children}
