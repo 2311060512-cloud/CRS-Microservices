@@ -90,9 +90,14 @@ export default function Navbar() {
                         </Link>
 
                         {isAuthenticated && user?.role === 'ADMIN' && (
-                            <Link to="/admin/courses" style={linkStyle('/admin/courses')}>
-                                ⚙️ Quản trị môn học
-                            </Link>
+                            <>
+                                <Link to="/admin/courses" style={linkStyle('/admin/courses')}>
+                                    ⚙️ Quản trị môn học
+                                </Link>
+                                <Link to="/admin/api-keys" style={linkStyle('/admin/api-keys')}>
+                                    🔑 Quản lý API Key
+                                </Link>
+                            </>
                         )}
 
                         {isAuthenticated && user?.role === 'STUDENT' && (
