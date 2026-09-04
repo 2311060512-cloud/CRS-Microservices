@@ -23,6 +23,17 @@ spring:
                 - RewritePath=/api/auth/(?<segment>.*), /auth/${segment}
 
             # ==========================
+            # AUTH SERVICE - API KEYS (ADMIN)
+            # ==========================
+            - id: auth-service-apikeys
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/api-keys,/api/api-keys/**
+              filters:
+                - RewritePath=/api/api-keys/(?<segment>.*), /api-keys/${segment}
+                - RewritePath=/api/api-keys, /api-keys
+
+            # ==========================
             # COURSE LIST
             # ==========================
             - id: course-service-list
@@ -100,11 +111,6 @@ server:
 jwt:
   secret: CRS-Microservices-Secret-Key-Nam-3-Hoc-Ky-2026-Doi-Trong-Thuc-Te
 
-# ==========================
-# PARTNER API KEY
-# ==========================
-partner:
-  api-key: crs-partner-key-2026
 
 # ==========================
 # ACTUATOR / GATEWAY
